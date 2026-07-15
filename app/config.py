@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     IMAGE_MODEL: str = "openai/gpt-image-2"
     IMAGE_QUALITY: str = "high"
 
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_API_PATH: str = "/chat/completions"
+    DEEPSEEK_MODEL: str = "deepseek-v4-flash"
+    SEMANTIC_REQUEST_TIMEOUT_SECONDS: int = 60
+
     MIN_FILES: int = 2
     MAX_FILES: int = 6
     MAX_FILE_SIZE_MB: int = 10
@@ -43,6 +49,16 @@ class Settings(BaseSettings):
             path = f"/{path}"
         return f"{host}{path}"
 
+    @property
+    def deepseek_api_url(self) -> str:
+        base_url = self.DEEPSEEK_BASE_URL.strip().rstrip("/")
+        if not base_url.startswith(("http://", "https://")):
+            base_url = f"https://{base_url}"
+        path = self.DEEPSEEK_API_PATH.strip()
+        if not path.startswith("/"):
+            path = f"/{path}"
+        return f"{base_url}{path}"
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -50,4 +66,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-

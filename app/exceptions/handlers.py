@@ -53,6 +53,8 @@ async def request_validation_error_handler(
         public_error = error_for(ErrorCode.NO_FILES)
     elif "instruction" in missing_fields:
         public_error = error_for(ErrorCode.EMPTY_INSTRUCTION)
+    elif "image_mapping" in missing_fields:
+        public_error = error_for(ErrorCode.MISSING_IMAGE_MAPPING)
     else:
         safe_errors = [
             {

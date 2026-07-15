@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 
@@ -44,7 +45,8 @@ class CanvasComposer:
         if item_count > self.settings.MAX_FILES:
             raise error_for(ErrorCode.TOO_MANY_FILES)
 
-        rows, cols = (2, 2) if item_count <= 4 else (2, 3)
+        cols = max(2, math.ceil(math.sqrt(item_count)))
+        rows = max(2, math.ceil(item_count / cols))
         slot_size = int(self.settings.SLOT_SIZE)
         gutter = int(self.settings.GUTTER)
         margin = int(self.settings.MARGIN)

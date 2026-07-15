@@ -13,10 +13,17 @@ class ErrorCode(str, Enum):
     FILE_TOO_LARGE = "FILE_TOO_LARGE"
     INVALID_IMAGE_FORMAT = "INVALID_IMAGE_FORMAT"
     INVALID_IMAGE_CONTENT = "INVALID_IMAGE_CONTENT"
+    MISSING_IMAGE_MAPPING = "MISSING_IMAGE_MAPPING"
+    INVALID_IMAGE_MAPPING = "INVALID_IMAGE_MAPPING"
+    IMAGE_MAPPING_MISMATCH = "IMAGE_MAPPING_MISMATCH"
     MISSING_API_TOKEN = "MISSING_API_TOKEN"
     PROVIDER_REQUEST_FAILED = "PROVIDER_REQUEST_FAILED"
     INVALID_PROVIDER_RESPONSE = "INVALID_PROVIDER_RESPONSE"
     INVALID_PROVIDER_BASE64 = "INVALID_PROVIDER_BASE64"
+    MISSING_SEMANTIC_API_KEY = "MISSING_SEMANTIC_API_KEY"
+    SEMANTIC_PROVIDER_REQUEST_FAILED = "SEMANTIC_PROVIDER_REQUEST_FAILED"
+    INVALID_SEMANTIC_PROVIDER_RESPONSE = "INVALID_SEMANTIC_PROVIDER_RESPONSE"
+    INVALID_SEMANTIC_PLAN = "INVALID_SEMANTIC_PLAN"
     OUTPUT_ASPECT_RATIO_MISMATCH = "OUTPUT_ASPECT_RATIO_MISMATCH"
     JOB_NOT_FOUND = "JOB_NOT_FOUND"
     VALIDATION_ERROR = "VALIDATION_ERROR"
@@ -40,6 +47,15 @@ ERROR_DEFINITIONS: dict[ErrorCode, ErrorDefinition] = {
         "只支持 PNG、JPG、JPEG 和 WEBP。", 400
     ),
     ErrorCode.INVALID_IMAGE_CONTENT: ErrorDefinition("图片内容无效或已损坏。", 400),
+    ErrorCode.MISSING_IMAGE_MAPPING: ErrorDefinition(
+        "图片对应关系不能为空。", 400
+    ),
+    ErrorCode.INVALID_IMAGE_MAPPING: ErrorDefinition(
+        "图片对应关系格式无效。", 400
+    ),
+    ErrorCode.IMAGE_MAPPING_MISMATCH: ErrorDefinition(
+        "图片对应关系与实际上传顺序不一致。", 400
+    ),
     ErrorCode.MISSING_API_TOKEN: ErrorDefinition("未配置 QnAIGC API Token。", 503),
     ErrorCode.PROVIDER_REQUEST_FAILED: ErrorDefinition(
         "图像编辑服务请求失败。", 502
@@ -49,6 +65,18 @@ ERROR_DEFINITIONS: dict[ErrorCode, ErrorDefinition] = {
     ),
     ErrorCode.INVALID_PROVIDER_BASE64: ErrorDefinition(
         "图像编辑服务返回了无效的图片数据。", 502
+    ),
+    ErrorCode.MISSING_SEMANTIC_API_KEY: ErrorDefinition(
+        "未配置 DeepSeek API Key。", 503
+    ),
+    ErrorCode.SEMANTIC_PROVIDER_REQUEST_FAILED: ErrorDefinition(
+        "语义解析服务请求失败。", 502
+    ),
+    ErrorCode.INVALID_SEMANTIC_PROVIDER_RESPONSE: ErrorDefinition(
+        "语义解析服务返回了无效响应。", 502
+    ),
+    ErrorCode.INVALID_SEMANTIC_PLAN: ErrorDefinition(
+        "语义解析服务返回了无效编辑计划。", 502
     ),
     ErrorCode.OUTPUT_ASPECT_RATIO_MISMATCH: ErrorDefinition(
         "模型输出画布的宽高比与输入不一致。", 422

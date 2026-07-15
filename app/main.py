@@ -10,6 +10,10 @@ from app.config import Settings, get_settings
 from app.exceptions.handlers import register_exception_handlers
 from app.services.job_service import JobService
 from app.services.qnaigc_provider import QnAIGCImageEditProvider
+from app.services.semantic_plan_service import (
+    DeepSeekSemanticPlanner,
+    SemanticPlanner,
+)
 
 
 def _create_data_directories(data_dir: Path) -> None:
@@ -20,6 +24,7 @@ def _create_data_directories(data_dir: Path) -> None:
 def create_app(
     settings: Settings | None = None,
     provider: QnAIGCImageEditProvider | None = None,
+    semantic_planner: SemanticPlanner | None = None,
 ) -> FastAPI:
     """Build an application; injectable arguments keep tests fully offline."""
 
@@ -34,10 +39,12 @@ def create_app(
     register_exception_handlers(application)
 
     image_provider = provider or QnAIGCImageEditProvider(app_settings)
+    planner = semantic_planner or DeepSeekSemanticPlanner(app_settings)
     application.state.settings = app_settings
     application.state.job_service = JobService(
         settings=app_settings,
         provider=image_provider,
+        semantic_planner=planner,
     )
 
     @application.get("/health", tags=["health"])
@@ -54,4 +61,3 @@ def create_app(
 
 
 app = create_app()
-

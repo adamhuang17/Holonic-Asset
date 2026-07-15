@@ -21,11 +21,16 @@ def get_job_service(request: Request) -> JobService:
 async def create_job(
     files: Annotated[list[UploadFile], File()],
     instruction: Annotated[str, Form()],
+    image_mapping: Annotated[str, Form()],
     service: JobService = Depends(get_job_service),
 ) -> JobResponse:
     """Synchronously create and execute one composite image editing job."""
 
-    return await service.create_and_execute_job(files, instruction)
+    return await service.create_and_execute_job(
+        files,
+        instruction,
+        image_mapping,
+    )
 
 
 @router.get("/{job_id}")

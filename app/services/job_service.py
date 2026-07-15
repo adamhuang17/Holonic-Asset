@@ -17,8 +17,9 @@ from app.exceptions.errors import AppError, ErrorCode, error_for
 from app.models.job import FailedJobRecord, JobArtifacts, JobError, JobResponse
 from app.services.canvas_composer import CanvasComposer
 from app.services.canvas_splitter import CanvasSplitter
-from app.services.file_service import FileService
+from app.services.file_service import FileService, sanitize_filename
 from app.services.prompt_service import PromptService
+from app.services.semantic_plan_service import SemanticPlanner
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class JobService:
         self,
         settings: Settings,
         provider: ImageEditProvider,
+        semantic_planner: SemanticPlanner,
         *,
         file_service: FileService | None = None,
         composer: CanvasComposer | None = None,
@@ -45,6 +47,7 @@ class JobService:
     ) -> None:
         self.settings = settings
         self.provider = provider
+        self.semantic_planner = semantic_planner
         self.data_root = Path(settings.DATA_DIR).resolve()
         self.file_service = file_service or FileService(settings)
         self.composer = composer or CanvasComposer(settings)
@@ -55,14 +58,42 @@ class JobService:
         self,
         files: list[UploadFile],
         instruction: str,
+        image_mapping: str,
     ) -> JobResponse:
         job_id = f"job_{uuid4().hex}"
         directories = self._create_job_directories(job_id)
         clean_instruction = instruction.strip()
+        clean_image_mapping = image_mapping.strip()
 
         try:
-            self._validate_request(files, clean_instruction)
+            self._validate_request(
+                files,
+                clean_instruction,
+                clean_image_mapping,
+            )
+            image_refs = [
+                f"image{index + 1}" for index in range(len(files))
+            ]
+            parsed_mapping = self._parse_image_mapping(
+                clean_image_mapping,
+                image_refs,
+            )
+            self._validate_image_mapping(
+                parsed_mapping,
+                image_refs,
+                files,
+            )
+
             uploads = await self.file_service.save_uploads(job_id, files)
+
+            edit_plan = await self.semantic_planner.plan(
+                description=clean_instruction,
+                image_refs=image_refs,
+            )
+            self._write_json(
+                directories["jobs"] / "semantic_plan.json",
+                edit_plan.model_dump(mode="json"),
+            )
 
             composite_path, manifest = self.composer.compose(
                 job_id=job_id,
@@ -76,7 +107,15 @@ class JobService:
                 manifest.model_dump(mode="json"),
             )
 
-            prompt = self.prompt_service.build(clean_instruction, len(uploads))
+            prompt = self.prompt_service.build(
+                plan=edit_plan,
+                manifest=manifest,
+                image_refs=image_refs,
+            )
+            self._write_text(
+                directories["jobs"] / "generation_prompt.txt",
+                prompt,
+            )
             edited_canvas_path = directories["edited"] / "edited_canvas.png"
             await self.provider.edit(
                 composite_path=composite_path,
@@ -165,6 +204,7 @@ class JobService:
         self,
         files: list[UploadFile],
         clean_instruction: str,
+        clean_image_mapping: str,
     ) -> None:
         count = len(files)
         if count == 0:
@@ -175,6 +215,65 @@ class JobService:
             raise error_for(ErrorCode.TOO_MANY_FILES)
         if not clean_instruction:
             raise error_for(ErrorCode.EMPTY_INSTRUCTION)
+        if not clean_image_mapping:
+            raise error_for(ErrorCode.MISSING_IMAGE_MAPPING)
+
+    @staticmethod
+    def _parse_image_mapping(
+        raw_mapping: str,
+        image_refs: list[str],
+    ) -> dict[str, str]:
+        try:
+            mapping = json.loads(raw_mapping)
+        except (json.JSONDecodeError, UnicodeError) as exc:
+            raise error_for(
+                ErrorCode.INVALID_IMAGE_MAPPING,
+                details={"reason": "invalid_json"},
+            ) from exc
+
+        if not isinstance(mapping, dict):
+            raise error_for(
+                ErrorCode.INVALID_IMAGE_MAPPING,
+                details={"reason": "expected_json_object"},
+            )
+        if set(mapping) != set(image_refs):
+            raise error_for(
+                ErrorCode.INVALID_IMAGE_MAPPING,
+                details={
+                    "reason": "invalid_image_refs",
+                    "expected_refs": image_refs,
+                },
+            )
+
+        normalized: dict[str, str] = {}
+        for image_ref in image_refs:
+            filename = mapping[image_ref]
+            if not isinstance(filename, str) or not filename.strip():
+                raise error_for(
+                    ErrorCode.INVALID_IMAGE_MAPPING,
+                    details={
+                        "reason": "invalid_filename",
+                        "image": image_ref,
+                    },
+                )
+            normalized[image_ref] = sanitize_filename(filename)
+        return normalized
+
+    @staticmethod
+    def _validate_image_mapping(
+        image_mapping: dict[str, str],
+        image_refs: list[str],
+        files: list[UploadFile],
+    ) -> None:
+        received_mapping = {
+            image_ref: sanitize_filename(upload.filename)
+            for image_ref, upload in zip(image_refs, files, strict=True)
+        }
+        if image_mapping != received_mapping:
+            raise error_for(
+                ErrorCode.IMAGE_MAPPING_MISMATCH,
+                details={"received_mapping": received_mapping},
+            )
 
     def _create_job_directories(self, job_id: str) -> dict[str, Path]:
         directories = {
@@ -221,6 +320,13 @@ class JobService:
             json.dumps(value, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+
+    def _write_text(self, path: Path, value: str) -> None:
+        safe_path = path.resolve()
+        if not safe_path.is_relative_to(self.data_root):
+            raise error_for(ErrorCode.INTERNAL_ERROR)
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+        safe_path.write_text(value, encoding="utf-8")
 
     def _data_path(self, *parts: str) -> Path:
         candidate = self.data_root.joinpath(*parts).resolve()
