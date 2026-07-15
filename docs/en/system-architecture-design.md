@@ -2,21 +2,13 @@
 
 ## Overall Architecture
 
-The system uses a microservices architecture. The User, Project, and AI modules are separated into independent services and accessed through a unified Gateway entry point.
+This project adopts a Service-Based Architecture (SBA), dividing the system into several independent services based on business domains and functions. Each service has clear responsibility boundaries, can choose the appropriate technology stack based on business requirements, and communicates via protocols such as HTTP/gRPC.
 
-```mermaid
-flowchart TB
-    client[Client] --> gateway
+Rationale:
+- Compared to a monolithic architecture, this project has a larger business scope with clearly distinct service domains and multiple technology stack requirements. SBA provides greater technology stack flexibility and better module decoupling.
+- Compared to a microservices architecture, this project does not require complex service governance infrastructure, and the granularity of service splitting does not need to be overly fine. The architecture is simpler and better suited to the current project scale.
 
-    subgraph services[Service boundary]
-        gateway[Gateway]
-        gateway --> server1((Server 1))
-        gateway --> server2((Server 2))
-        gateway --> server3((Server 3))
-    end
-```
-
-The source diagram labels the backend services generically as `server1`, `server2`, and `server3`; it does not define a one-to-one mapping between those services and the business modules.
+![alt text](/docs/image/system-architecture.png)
 
 ## Module Breakdown
 
