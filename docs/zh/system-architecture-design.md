@@ -2,21 +2,14 @@
 
 ## 整体架构
 
-系统采用微服务架构。User、Project 与 AI 等模块被拆分为独立服务，并统一通过 Gateway 入口访问。
+本项目采用 Service-Based Architecture（SBA）,根据业务领域与功能划分为几个独立的服务，每个服务都有明确的职责边界，可以根据业务需求选择相应的技术栈，并通过http/grpc等协议进行通信。
 
-```mermaid
-flowchart TB
-    client[客户端] --> gateway
+原因：
+- 相较于单体架构，本项目业务量较大，不同服务领域区分清晰且有多种技术栈的需求，SBA提供了更高的技术栈灵活性与更好的模块解耦。
+- 相较于微服务架构，本项目不需要引入复杂的服务治理基础设施，服务拆分粒度也不需要过细，架构简单，更适合当前项目规模。
 
-    subgraph services[服务边界]
-        gateway[网关]
-        gateway --> server1((服务 1))
-        gateway --> server2((服务 2))
-        gateway --> server3((服务 3))
-    end
-```
+![alt text](/docs/image/system-architecture.png)
 
-原始架构图将后端服务泛称为 `server1`、`server2` 与 `server3`，未定义这些服务与业务模块之间的一对一映射关系。
 
 ## 模块拆分
 
