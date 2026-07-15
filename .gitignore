@@ -1,0 +1,24 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+
+# Runtime artifacts (keep the checked-in directory placeholders).
+data/uploads/*
+!data/uploads/.gitkeep
+data/composite/*
+!data/composite/.gitkeep
+data/edited/*
+!data/edited/.gitkeep
+data/outputs/*
+!data/outputs/.gitkeep
+data/jobs/*
+!data/jobs/.gitkeep
+/.agents/
+/.claude/
+/.vscode/
+pytest.ini
+/tests/
+/data/
