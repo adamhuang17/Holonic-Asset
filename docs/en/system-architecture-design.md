@@ -82,7 +82,111 @@ type ProjectService interface {
 
 #### Interfaces
 
-No interface definitions are provided in the source document for the Asset module.
+```go
+package asset
+
+import (
+    "context"
+    "encoding/json"
+)
+
+type AssetType string
+
+const (
+    AssetTypeCharacter   AssetType = "character"
+	AssetTypeTiles       AssetType = "tiles"
+    AssetTypeBGM         AssetType = "BGM"
+	AssetTypeUI          AssetType = "UI"
+    AssetTypeObject      AssetType = "object"
+)
+
+// Asset stores fields shared by all asset types.
+//
+// Attributes stores asset-specific information such as:
+//
+//   - canvas
+//   - animation
+//   - audio metadata
+//   - prototype
+//
+// The service should validate that Attributes contains a JSON object.
+type Asset struct {
+    ID          uint            `json:"id"`
+    ProjectID   uint            `json:"projectId"`
+    Name        string          `json:"name"`
+    Type        AssetType       `json:"type"`
+    Description string          `json:"description"`
+    ResultURL   string          `json:"resultUrl"`
+    Tags        []string        `json:"tags"`
+    Attributes  json.RawMessage `json:"attributes"`
+}
+
+// AssetResource represents another asset used by the current asset.
+//
+// Resources are recorded in snapshots so historical versions preserve
+// their original dependencies.
+type AssetResource struct {
+    AssetID uint      `json:"assetId"`
+    Name    string    `json:"name"`
+    URL     string    `json:"url"`
+}
+
+// AssetSnapshot contains the complete editable state of an asset.
+//
+// ID and ProjectID are included for auditing, but restoring a snapshot
+// must not change the identity or project ownership of the current asset.
+type AssetSnapshot struct {
+    Asset      Asset             `json:"asset"`
+    Resources  []AssetResource   `json:"resources,omitempty"`
+    Attributes json.RawMessage   `json:"attributes"`
+}
+
+// AssetRecord stores one immutable asset version.
+//
+// Snapshot is stored as JSON in the database. AssetSnapshot defines the
+// expected document structure used when serializing and reading it.
+type AssetRecord struct {
+    ID           uint            `json:"id"`
+    AssetVersion uint            `json:"assetVersion"`
+    AssetID      uint            `json:"assetId"`
+    Snapshot     json.RawMessage `json:"snapshot"`
+}
+type AssetService interface {
+    // Create creates an asset and its initial version snapshot.
+    Create(ctx context.Context, asset *Asset) error
+
+    // ListByProjectID returns all assets belonging to a project.
+    ListByProjectID(ctx context.Context, projectID uint) ([]*Asset, error)
+
+    // GetDetail returns the current asset state.
+    GetDetail(ctx context.Context, id uint) (*Asset, error)
+
+    // Update updates the asset and creates a new snapshot atomically.
+    Update(ctx context.Context, asset *Asset) error
+}
+
+type AssetRecordService interface {
+    // CreateSnapshot creates a snapshot from the current asset state.
+    // The service assigns the next AssetVersion automatically.
+    CreateSnapshot(ctx context.Context, assetID uint) (*AssetRecord, error)
+
+    // ListByAssetID returns snapshots ordered by AssetVersion descending.
+    ListByAssetID(
+        ctx context.Context,
+        assetID uint,
+    ) ([]*AssetRecord, error)
+
+    // GetDetail returns a specific snapshot record.
+    GetDetail(ctx context.Context, recordID uint) (*AssetRecord, error)
+
+    // Restore replaces the current editable asset state with a snapshot.
+    // Restoring also creates a new version rather than overwriting history.
+    Restore(
+        ctx context.Context,
+        assetID uint,
+        recordID uint,
+    ) error
+}
 
 ### 3. AI
 
