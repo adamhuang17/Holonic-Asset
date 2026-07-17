@@ -1,396 +1,101 @@
 # System Architecture Design
 
-## Overall Architecture
+## 1. Overall Architecture
 
-This project adopts a Service-Based Architecture (SBA), dividing the system into several independent services based on business domains and functions. Each service has clear responsibility boundaries, can choose the appropriate technology stack based on business requirements.
+### 1.1 Architectural Style
+
+This project adopts a Service-Based Architecture (SBA). The system is divided into several independent services based on business domains and functions. Each service has clear responsibility boundaries, can select an appropriate technology stack according to business requirements, and communicates through protocols such as HTTP and gRPC.
 
 Rationale:
-- Compared to a monolithic architecture, this project has a larger business scope with clearly distinct service domains and multiple technology stack requirements. SBA provides greater technology stack flexibility and better module decoupling.
-- Compared to a microservices architecture, this project does not require complex service governance infrastructure, and the granularity of service splitting does not need to be overly fine. The architecture is simpler and better suited to the current project scale.
 
-![alt text](/docs/image/system-architecture.png)
+- Compared with a monolithic architecture, this project has a relatively large business scope, clearly separated service domains, and a need for multiple technology stacks. SBA provides greater flexibility in technology selection and better module decoupling.
+- Compared with a microservices architecture, this project does not require complex service governance infrastructure or overly fine-grained service decomposition. Its simpler architecture is better suited to the current project scale.
 
-## Module Breakdown
+![alt text](../image/system-architecture.png)
 
-### 1. Project
+### 1.2 Topology
 
-#### Functions
+## 2. Internal Service Layers
 
-- Create a project
-- Retrieve the project list
-- Retrieve project details
-- Update project configuration
+## 3. Business Service Responsibilities
 
-#### Data Structure
-```go
-type GameType string
-type ViewType string
+This section describes the responsibility boundaries and data ownership of the Project, Asset, and AI business services. Data structures and interface definitions are maintained in the corresponding service design documents.
 
-const (
-    GameTypeRPG GameType = "RPG"
-    GameTypeACT GameType = "ACT"
-    GameTypeSLG GameType = "SLG"
-    GameTypeOther GameType = "Other"
+### 3.1 Project Service
 
-    ViewTypeTopDown ViewType = "TopDown"
-    ViewTypeSideView ViewType = "SideView"
-    ViewTypeIsometric ViewType = "Isometric"
-    ViewTypeOther   ViewType = "Other"
-)
+The Project Service manages the project lifecycle and project-level configuration, including:
 
-type Project struct {
-    ID          uint
-    Name        string
-    GameType    GameType `json:"gameType"`    // RPG, ACT, SLG, ...
-    ViewType    ViewType `json:"viewType"`    // TopDown, SideView, Isometric, ...
-    Description string                       // Project description
-    Reference   string                       // AI-generated reference image based on the project description
-    Style       string                       // Art style of the project
-}
-```
-#### Service
-```go
-type ProjectService interface {
-    Create(ctx context.Context, project *Project) error
-    // Get project list by User ID
-    ListByUid(ctx context.Context, uid uint) ([]*Project, error)
-    // GetDetail returns the details of the project.
-    GetDetail(ctx context.Context, id uint) (*Project, error)
-    Update(ctx context.Context, project *Project) error
-}
-```
-#### Input&Output
+- Creating projects
+- Retrieving the current user's project list
+- Retrieving project details
+- Updating project configuration
+- Maintaining project-level information such as game type, view type, art style, description, and reference images
 
+The Project Service owns Project-related data. When a project reference image needs to be generated, the application layer calls the AI Service. The Project domain model does not depend directly on a specific model provider.
 
-### 2. Asset
+Data structures: [Project Service](<data structure/project.md>); interfaces: [Project Service](interfaces/project.md)
 
-#### Functions
+### 3.2 Asset Service
 
-- Create or duplicate one or more assets
-- Query assets by type, tag, or name
-- Delete an asset
-- Retrieve asset details
-- Search assets
-- Create relationships between assets
-- Add a tag
-- Delete a tag
-- Update a tag
+The Asset Service manages the lifecycle, organizational relationships, and versions of assets within a project, including:
 
-#### Data Structure
+- Creating or duplicating one or more assets
+- Querying assets by project, type, tag, or name
+- Retrieving and updating asset details
+- Deleting assets
+- Establishing relationships between assets
+- Managing asset tags
+- Creating, querying, and restoring historical asset versions
 
-```go
-package asset
+The Asset Service owns data related to `Asset`, `AssetResource`, `AssetSnapshot`, and `AssetRecord`. Other services must not bypass the Asset Service to modify this data directly.
 
-import (
-    "context"
-    "encoding/json"
-)
+Data structures: [Asset Service](<data structure/asset.md>); interfaces: [Asset Service](interfaces/asset.md)
 
-type AssetType string
+### 3.3 AI Service
 
-const (
-    AssetTypeCharacter   AssetType = "character"
-	AssetTypeTiles       AssetType = "tiles"
-    AssetTypeBGM         AssetType = "BGM"
-	AssetTypeUI          AssetType = "UI"
-    AssetTypeObject      AssetType = "object"
-)
+The AI Service provides content-generation capabilities to other business services and external callers, including:
 
-// Asset stores fields shared by all asset types.
-//
-// Attributes stores asset-specific information such as:
-//
-//   - canvas
-//   - animation
-//   - audio metadata
-//   - prototype
-//
-// The service should validate that Attributes contains a JSON object.
-type Asset struct {
-    ParentID    unit            `json:parentId`
-    ID          uint            `json:"id"`
-    ProjectID   uint            `json:"projectId"`
-    Name        string          `json:"name"`
-    Type        AssetType       `json:"type"`
-    Description string          `json:"description"`
-    ResultURL   string          `json:"resultUrl"`
-    Tags        []string        `json:"tags"`
-    Attributes  json.RawMessage `json:"attributes"`
-}
+- Generating character assets
+- Generating UI elements
+- Generating scenes and layers
+- Generating tile sets
+- Generating objects
+- Generating animations
+- Generating project reference images
 
-// AssetResource represents another asset used by the current asset.
-//
-// Resources are recorded in snapshots so historical versions preserve
-// their original dependencies.
-type AssetResource struct {
-    AssetID uint      `json:"assetId"`
-    Name    string    `json:"name"`
-    URL     string    `json:"url"`
-}
+The AI Service organizes generation tasks and invokes models, but it does not own Project or Asset business data. When a generated result needs to be stored as an asset, the appropriate application service should coordinate with the Asset Service.
 
-// AssetSnapshot contains the complete editable state of an asset.
-//
-// ID and ProjectID are included for auditing, but restoring a snapshot
-// must not change the identity or project ownership of the current asset.
-type AssetSnapshot struct {
-    Asset      Asset             `json:"asset"`
-    Resources  []AssetResource   `json:"resources,omitempty"`
-    Attributes json.RawMessage   `json:"attributes"`
-}
+Data structures: [AI Service](<data structure/ai.md>); interfaces: [AI Service](interfaces/ai.md)
 
-// AssetRecord stores one immutable asset version.
-//
-// Snapshot is stored as JSON in the database. AssetSnapshot defines the
-// expected document structure used when serializing and reading it.
-type AssetRecord struct {
-    ID           uint            `json:"id"`
-    AssetVersion uint            `json:"assetVersion"`
-    AssetID      uint            `json:"assetId"`
-    Snapshot     json.RawMessage `json:"snapshot"`
-}
-```
+## 4. Access Infrastructure
 
-#### Service
-``` go
-type AssetService interface {
-    // Create creates an asset and its initial version snapshot.
-    Create(ctx context.Context, asset *Asset) error
-    // ListByProjectID returns all assets belonging to a project.
-    ListByProjectID(ctx context.Context, projectID uint) ([]*Asset, error)
-    // GetDetail returns the current asset state.
-    GetDetail(ctx context.Context, id uint) (*Asset, error)
-    // Update updates the asset and creates a new snapshot atomically.
-    Update(ctx context.Context, asset *Asset) error
-}
+### 4.1 Gateway Responsibilities
 
-type AssetRecordService interface {
-    // CreateSnapshot creates a snapshot from the current asset state.
-    // The service assigns the next AssetVersion automatically.
-    CreateSnapshot(ctx context.Context, assetID uint) (*AssetRecord, error)
-    // ListByAssetID returns snapshots ordered by AssetVersion descending.
-    ListByAssetID(
-        ctx context.Context,
-        assetID uint,
-    ) ([]*AssetRecord, error)
-    // GetDetail returns a specific snapshot record.
-    GetDetail(ctx context.Context, recordID uint) (*AssetRecord, error)
-    // Restore replaces the current editable asset state with a snapshot.
-    // Restoring also creates a new version rather than overwriting history.
-    Restore(ctx context.Context, assetID uint, recordID uint,
-    ) (*AssetRecord,error)
-}
-```
-#### Input&Output
+The Gateway provides a unified system entry point for frontend and external callers. Nginx is used as the initial Gateway implementation.
 
-
-### 3. AI
-
-#### Functions
-
-- Generate characters
-- Generate UI elements
-- Generate scenes
-- Generate objects
-- Generate animations
-- Generate reference images
-
-#### Data Structure
-```go
-
-type Size struct {
-    Width  int `json:"width"`
-    Height int `json:"height"`
-}
-
-type CreateCharacterRequest struct {
-    ProjectPrompt string        `json:"projectPrompt"` // Project prompt
-    UserPrompt    string        `json:"userPrompt"`
-    Name          string        `json:"name"`
-    Facing        string        `json:"facing"`
-    Size          Size          `json:"size"`
-    Reference     []string      `json:"reference"`
-    Physics       PhysicsConfig `json:"physics"`
-}
-
-type CreateCharacterResponse struct {
-    URL string `json:"url"`
-}
-
-type PhysicsConfig struct {
-    Collision CollisionConfig `json:"collision"`
-    Movement  MovementConfig  `json:"movement"`
-    Gravity   GravityConfig   `json:"gravity"`
-}
-
-type CreateUIRequest struct {
-    ProjectPrompt string   `json:"projectPrompt"` // Project prompt
-    UserPrompt    string   `json:"user_prompt"`
-    Type          string   `json:"type"`           // button, panel, hp_bar
-    Size          Size     `json:"size"`
-    Reference     []string `json:"reference"`
-}
-
-type CreateUIResponse struct {
-    URL string `json:"url"`
-}
-
-type LayerResult struct {
-    ID  uint   `json:"id"`  // Layer ID
-    Url string `json:"url"` // Generated image URL
-}
-
-type CreateSceneRequest struct {
-    ProjectPrompt string  `json:"projectPrompt"` // Project prompt
-    Style         string  `json:"style"`         // Style of the scene
-    Layers        []Layer `json:"layers"`        // Layers of the scene
-}
-
-type CreateSceneResponse struct {
-    Layers []LayerResult `json:"layers"` // Results for each layer
-}
-
-type CreateTileSetRequest struct {
-    ProjectPrompt string   `json:"projectPrompt"` // Project prompt
-    Prompt        string   `json:"prompt"`        // Prompt for the tile set
-    Reference     []string `json:"reference"`     // Reference images for tile set creation
-}
-
-type CreateTileSetResponse struct {
-    Url string `json:"url"` // Generated tile set image URL
-}
-
-type CreateObjectRequest struct {
-    UserPrompt    string   `json:"prompt"`        // Prompt for the object
-    ProjectPrompt string   `json:"projectPrompt"` // Project prompt
-    Derictions    int      `json:"derictions"`    // Number of directions for the object (e.g. 1, 4, 8)
-    Reference     string   `json:"reference"`     // Reference image for object creation
-    Size          Size     `json:"size"`          // Size of the object (e.g. "32X32", "64X64")
-    View          ViewType `json:"view"`          // View type of the object (e.g. "TopDown", "SideView", "Isometric")
-}
-
-type CreateObjectResponse struct {
-    Url string `json:"url"` // Generated object image URL
-}
-
-type CreateAnimationRequest struct {
-    ProjectPrompt  string `json:"projectPrompt"`
-    UserPrompt     string `json:"userPrompt"`
-    Name           string `json:"name"`
-    FirstFrameURL  string `json:"firstFrameUrl"`
-    Description    string `json:"description"`
-    FrameCount     int    `json:"frameCount"`
-    KeepFirstFrame bool   `json:"keepFirstFrame"`
-}
-
-type CreateAnimationResponse struct {
-    URL            string `json:"urls"`
-}
-```
-#### Service
-```go
-type Character interface {
-    CrreateCharacter(request *CreateCharacterRequest)
-}
-type MapService interface {
-    CreateScene(request *CreateSceneRequest) (*CreateSceneResponse, error)
-    CreateTileSet(request *CreateTileSetRequest) (*CreateTileSetResponse, error)
-}
-
-type ObjectService interface {
-    CreateObject(request *CreateObjectRequest) (*CreateObjectResponse, error)
-}
-```
-#### Message Structure
-```go
-type MessageRole string
-type ContentPartType string
-
-const (
-    MessageRoleSystem    MessageRole = "system"
-    MessageRoleUser      MessageRole = "user"
-    MessageRoleAssistant MessageRole = "assistant"
-    MessageRoleTool      MessageRole = "tool"
-
-    ContentPartText     ContentPartType = "text"
-    ContentPartImageURL ContentPartType = "image_url"
-    ContentPartAudioURL ContentPartType = "audio_url"
-    ContentPartMaskURL  ContentPartType = "mask_url"
-)
-
-type ContentPart struct {
-    Type      ContentPartType `json:"type"`
-    Text      string          `json:"text,omitempty"`
-    URL       string          `json:"url,omitempty"`
-    MediaType string          `json:"mediaType,omitempty"`
-}
-
-type LLMMessage struct {
-    Role    MessageRole   `json:"role"`
-    Content []ContentPart `json:"content"`
-}
-
-type LLMUsage struct {
-    InputTokens  int `json:"inputTokens"`
-    OutputTokens int `json:"outputTokens"`
-    TotalTokens  int `json:"totalTokens"`
-}
-
-type LLMRequest struct {
-    RequestID      string          `json:"requestId"`
-    Model          string          `json:"model"`
-    Messages       []LLMMessage    `json:"messages"`
-    ResponseFormat json.RawMessage `json:"responseFormat,omitempty"`
-}
-
-type LLMResponse struct {
-    ID      string     `json:"id"`
-    Model   string     `json:"model"`
-    Message LLMMessage `json:"message"`
-    Usage   LLMUsage   `json:"usage"`
-}
-
-type ImageGenerationRequest struct {
-    RequestID  string   `json:"requestId"`
-    Model      string   `json:"model"`
-    Prompt     string   `json:"prompt"`
-    References []string `json:"references,omitempty"`
-    Size       Size     `json:"size"`
-    Count      int      `json:"count"`
-}
-
-
-type LLMClient interface {
-    Chat(ctx context.Context, request *LLMRequest) (*LLMResponse, error)
-    GenerateImage(ctx context.Context, request *ImageGenerationRequest) (*GenerationResult, error)
-    GetGenerationResult(ctx context.Context, generationID string) (*GenerationResult, error)
-    CancelGeneration(ctx context.Context, generationID string) error
-}
-```
-
-### 4. Gateway
-
-#### function
-The Gateway provides a unified entry point for frontend and external requests.
-
-Its main responsibilities include:
+The Gateway is responsible for:
 
 - Forwarding requests to the appropriate backend service
-- TLS termination
-- Authentication information forwarding
-- CORS handling
-- Request size limits
-- Rate limiting
-- Timeout control
-- Access logging and request tracing
+- Terminating TLS connections
+- Forwarding user authentication information
+- Handling cross-origin requests
+- Limiting request body size
+- Enforcing rate limits
+- Controlling request timeouts
+- Recording access logs and request tracing information
 
-Nginx is planned as the initial Gateway implementation.
+### 4.2 Boundary Constraints
 
-The Gateway does not contain business logic or directly access service databases. Project, asset, and AI-related operations are handled by their corresponding backend services.
+The Gateway is part of the access infrastructure. It is not a business service and does not contain Project, Asset, or AI domain logic.
 
-The concrete routing paths and API versioning strategy will be defined after the service boundaries and external APIs are finalized.
+The Gateway must not:
 
-#### Service Orchestration
+- Access any business service database directly
+- Execute business rules for assets, projects, or generation tasks
+- Call external model providers directly
+- Determine cross-service workflows based on business state
+- Modify the semantics of data returned by business services
 
-Nginx is responsible only for request forwarding and infrastructure-level concerns.
+The Gateway may forward authentication information, but the corresponding business service remains responsible for validating access permissions for specific resources.
 
-Business workflows involving multiple services should be coordinated by an application service or a dedicated orchestration component rather than by Nginx.
+### 4.3 Request Routing and Service Orchestration
