@@ -13,8 +13,7 @@
 
 Project、Asset、Record、Media 等业务模块均位于 Core API 内，不拆成独立进程。AI Service 和 Asset Worker 不直接修改业务数据库，也不互相调度。
 
-### 1.1 拓扑
-
+### 1.1 系统总体架构
 
 ![Holonic-Asset System Architecture](<../image/holonic-Asset System Architecture.png>)
 

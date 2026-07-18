@@ -13,8 +13,7 @@ The system uses a Service-Based Architecture with four runtime components:
 
 Project, Asset, Record, and Media modules live inside Core API; they are not separate processes. AI Service and Asset Worker do not write the business database or schedule each other.
 
-### 1.1 Topology
-
+### 1.1 Overall System Architecture
 
 ![Holonic-Asset System Architecture](<../image/holonic-Asset System Architecture.png>)
 
