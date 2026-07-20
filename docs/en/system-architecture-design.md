@@ -15,11 +15,11 @@ Project, Asset, Record, and Media modules live inside Core API; they are not sep
 
 ### 1.1 Overall System Architecture
 
-![Holonic-Asset System Architecture](<../image/holonic-Asset System Architecture.png>)
+![Holonic-Asset System Architecture](<../image/holonic-Asset System Architecture.svg>)
 
 ### 1.2 Communication boundaries
 
-- The browser only talks to Traefik; business HTTP requests enter Core API.
+- The browser only talks to Caddy; business HTTP requests enter Core API.
 - Long-running work uses NATS JetStream, not Redis queues.
 - Core API is the only orchestrator: it publishes Steps, receives results, updates state, and schedules dependent Steps.
 - Binary media never goes through HTTP or NATS messages; services pass object references in S3.
@@ -38,7 +38,7 @@ Project, Asset, Record, and Media modules live inside Core API; they are not sep
 | Jobs/events | NATS JetStream |
 | Cache/session | Redis |
 | Object storage | Replaceable S3 SDK |
-| Gateway | Traefik |
+| Gateway | Caddy |
 | HTTP contract | OpenAPI 3.1 |
 | Code generation | Hey API, oapi-codegen |
 | Initial deployment | Docker Compose |
@@ -214,7 +214,7 @@ All services use a replaceable S3 SDK. The database stores stable identifiers su
 workspaces/{workspace_id}/projects/{project_id}/artifacts/{artifact_id}/{variant}.{extension}
 ```
 
-Upload flow: Frontend requests an upload from Core API → receives a Presigned URL → uploads directly to S3 → reports completion → Core API validates the object and stores media metadata. Large files do not pass through Core API or Traefik.
+Upload flow: Frontend requests an upload from Core API → receives a Presigned URL → uploads directly to S3 → reports completion → Core API validates the object and stores media metadata. Large files do not pass through Core API or Caddy.
 
 ### 8.2 Redis
 
@@ -222,4 +222,4 @@ Redis is limited to sessions, rate limiting, verification codes, short-lived cac
 
 ### 8.3 Initial deployment
 
-Docker Compose deploys Frontend, Traefik, Core API, AI Service, Asset Worker, PostgreSQL, Redis, NATS JetStream, and an S3-compatible object store. A heavier orchestration platform requires a separate decision.
+Docker Compose deploys Frontend, Caddy, Core API, AI Service, Asset Worker, PostgreSQL, Redis, NATS JetStream, and an S3-compatible object store. A heavier orchestration platform requires a separate decision.
