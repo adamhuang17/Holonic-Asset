@@ -5,50 +5,50 @@ import (
 	interfaces "../Interface"
 )
 
+// AssetService manages CRUD operations for assets.
 type AssetModule interface {
-	RegisterAssetService(service interfaces.AssetService)
+	Register()
+	GetAssets(ctx context.Context, projectID uint) ([]Asset, error)
+	GetDetail(ctx context.Context, id uint) (Asset, error)
+	UpdateTags(ctx context.Context, id uint, tags []string) ([]string, error)
 
-	GetAssets(ctx context.Context, projectID uint)([]Asset,error)
-
-	GetDetail(ctx context.Context, id uint) (Asset,error)
-
-	UpdateTags(ctx context.Context,id uint, tags []string) ([]string, error)
-	
-	// Create a Character Asset and create an empty prototype Resource.
+	// Creates a Character asset and initializes an empty prototype resource.
 	CreateCharacterAsset(ctx context.Context, asset *Asset) (uint, error)
-
-	GetProtoTypeResources(ctx context.Context, assetID uint, version uint) (*AssetResource, error)
-
-	// Create an Object Asset and create an empty prototype Resource.
 	CreateObjectAsset(ctx context.Context, asset *Asset) (uint, error)
-
 	CreateTileSetAsset(ctx context.Context, asset *Asset) (uint, error)
-
 	CreateUIAsset(ctx context.Context, asset *Asset) (uint, error)
-
 	CreateSceneryAsset(ctx context.Context, asset *Asset) (uint, error)
+}
 
-	// Create an Animation Resource bound to an Asset.
+// AssetResourceService manages resources under an asset.
+type AssetResourceModule interface {
+	GetProtoTypeResources(ctx context.Context, assetID uint, version uint) ([]AssetResource, error)
+
+	// Animation resources.
 	CreateAnimationResource(ctx context.Context, resource *AssetResource) (uint, error)
-
+	EditAnimationResource(ctx context.Context, id uint, resource []AssetResource) error
 	GetAnimations(ctx context.Context, assetID uint, version uint) ([]AssetResource, error)
 
-	// Create Frame Resources bound to an Animation.
+	// Frame resources (associated with an animation).
 	CreateFrameResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
-
 	EditFrameResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
+	GetFrameResources(ctx context.Context, animationID uint) ([]AssetResource, error)
 
-	CreateImageResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
-
+	// Tile / Item resources.
 	CreateTileResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
+	EditItemResources(ctx context.Context, id uint, resource []AssetResource) ([]AssetResource, error)
+	GetItemResources(ctx context.Context, assetID uint, version uint) ([]AssetResource, error)
+	GetTilesResources(ctx context.Context, itemID uint) ([]AssetResource, error)
 
-	EditItemResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
+	// Image resources.
+	CreateImageResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
+	EditImageResources(ctx context.Context, resource []AssetResource) ([]AssetResource, error)
+}
 
+// AssetVersionService manages asset versioning.
+type AssetVersionModule interface {
 	CreateRecord(ctx context.Context, version *AssetVersion) (uint, error)
-
 	GetVersionHistory(ctx context.Context, assetID uint) ([]AssetVersion, error)
-
 	RollBackVersion(ctx context.Context, assetID uint, version uint) (uint, error)
-
 	Copy(ctx context.Context, assetID uint, version uint) (uint, error)
 }
