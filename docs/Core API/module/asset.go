@@ -7,6 +7,13 @@ import (
 
 type AssetModule interface {
 	RegisterAssetService(service interfaces.AssetService)
+
+	GetAssets(ctx context.Context, projectID uint)([]Asset,error)
+
+	GetDetail(ctx context.Context, id uint) (Asset,error)
+
+	UpdateTags(ctx context.Context,id uint, tags []string) ([]string, error)
+	
 	// Create a Character Asset and create an empty prototype Resource.
 	CreateCharacterAsset(ctx context.Context, asset *Asset) (uint, error)
 
