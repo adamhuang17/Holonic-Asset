@@ -1,9 +1,12 @@
 package module
 import (
 	"context"
+
+	interfaces "../Interface"
 )
 
 type AssetModule interface {
+	RegisterAssetService(service interfaces.AssetService)
 	// Create a Character Asset and create an empty prototype Resource.
 	CreateCharacterAsset(ctx context.Context, asset *Asset) (uint, error)
 
