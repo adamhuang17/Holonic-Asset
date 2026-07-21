@@ -65,7 +65,6 @@ PostgreSQL and object storage are infrastructure dependencies, not additional ap
 | Gateway                    | Caddy                                                  |
 | HTTP contract              | OpenAPI 3.1                                            |
 | Code generation            | Hey API, oapi-codegen                                  |
-| Observability              | OpenTelemetry                                          |
 | Initial deployment         | Docker Compose                                         |
 
 Not introduced: separate AI or asset-worker services, NATS, Redis, Kafka, Kubernetes, Next.js, SSR, React Server Components, LangChain, or LangGraph.
@@ -95,8 +94,8 @@ contracts/openapi/openapi.yaml
 
 ```text
 openapi.yaml
-├── oapi-codegen -> Go DTOs and server interfaces
-└── Hey API -> TypeScript SDK, Zod, and TanStack Query
+├── oapi-codegen → Go DTOs and server interfaces
+└── Hey API → TypeScript SDK, Zod, and TanStack Query
 ```
 
 Generated code lives in `generated` and is not edited manually. OpenAPI defines interface shape and basic validation; form grouping, widgets, previews, and complex interactions belong to frontend configuration and custom components.
@@ -105,13 +104,13 @@ Generated code lives in `generated` and is not edited manually. OpenAPI defines 
 
 ### 4.1 Stack and modules
 
-Core API uses Go, Echo, GORM, PostgreSQL, River with the `riverdatabasesql` driver, the AWS SDK for Go, goose, and OpenTelemetry.
+Core API uses Go, Echo, GORM, PostgreSQL, River with the `riverdatabasesql` driver, the AWS SDK for Go, and goose.
 
 | Module            | Responsibility                                                                                                                   |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `authentication`  | Login, sessions, permissions, and membership                                                                                     |
 | `project`         | Project lifecycle and project-level configuration                                                                                |
-| `asset`, `record` | Current asset state, resource dependencies, version snapshots, and restoration                                                   |
+| `asset`           | Current asset and Record state, resource dependencies, version snapshots, and restoration                                    |
 | `generation`      | Generation requests, plans, Step state, dependency scheduling, retry, cancellation, and candidate confirmation                   |
 | `ai`              | Prompt construction, constrained LLM planning, provider calls, AI image/audio generation and editing, usage, and cost collection |
 | `asset-worker`    | Deterministic image/audio processing, pixel normalization, validation, animation and sheet building, and export packaging        |
@@ -167,7 +166,7 @@ Current support is limited to `render_style = pixel_art` and `alpha_mode = binar
 - Keep OpenAPI DTOs, domain models, and GORM entities separate:
 
 ```text
-OpenAPI DTO -> Echo Handler -> Application Service -> Domain Model -> GORM Entity
+OpenAPI DTO → Echo Handler → Application Service → Domain Model → GORM Entity
 ```
 
 - Pass `context.Context` explicitly to all writes.
@@ -188,19 +187,19 @@ The current definitions are `Project`, `Asset`, `AssetResource`, `AssetSnapshot`
 
 ```text
 Core API request
--> validate request and persist business state
--> insert a River job in the same PostgreSQL transaction
--> River worker invokes an internal module
--> persist result and progress
--> enqueue the next ready Step when required
--> publish progress to the Frontend through SSE
+→ validate request and persist business state
+→ insert a River job in the same PostgreSQL transaction
+→ River worker invokes an internal module
+→ persist result and progress
+→ enqueue the next ready Step when required
+→ publish progress to the Frontend through SSE
 ```
 
 GenerationRun states:
 
 ```text
-pending -> planning -> planned -> running -> post_processing
--> waiting_confirmation -> completed
+pending → planning → planned → running → post_processing
+→ waiting_confirmation → completed
 ```
 
 Terminal states are `failed` and `cancelled`. Step states are `pending`, `ready`, `running`, `succeeded`, `failed`, `retry_wait`, `cancelled`, and `skipped`.
@@ -220,4 +219,4 @@ Terminal states are `failed` and `cancelled`. Step states are `pending`, `ready`
 The system uses a replaceable S3 SDK. The database stores stable identifiers such as bucket, object key, and checksum, not provider public URLs. Object keys are server-generated:
 `workspaces/{workspace_id}/projects/{project_id}/artifacts/{artifact_id}/{variant}.{extension}`
 
-Upload flow: Frontend requests an upload from Core API -> receives a Presigned URL -> uploads directly to S3 -> reports completion -> Core API validates the object and stores media metadata. Large files do not pass through Core API or Caddy.
+Upload flow: Frontend requests an upload from Core API → receives a Presigned URL → uploads directly to S3 → reports completion → Core API validates the object and stores media metadata. Large files do not pass through Core API or Caddy.
