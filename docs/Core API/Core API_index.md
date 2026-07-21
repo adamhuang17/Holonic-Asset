@@ -17,9 +17,9 @@ The CoreAPI module is the main module of the Core API. It contains the following
 
 **AI**
 
-The AI module accepts AI-assisted generation and editing requests from clients and coordinates their execution with the external AI Service. It validates the referenced Project, Asset, and Media resources, creates the required Tasks, and exposes provider-independent progress and result data. The module does not run models directly or allow the AI Service to modify Core API business data.
+The AI module accepts AI-assisted generation and editing requests from clients and coordinates their execution with the external AI Service. It validates the referenced Project, Asset, and Media resources and submits long-running work through the Task module. Task progress, replay, cancellation, and state transitions remain owned by the Task module. The AI module does not run models directly or allow the AI Service to modify Core API business data.
 
-The service interfaces, request and response models, task handoff rules, and error behavior are defined in the [AI module](./module/ai_service.go).
+The service interfaces, request and response models, task handoff rules, and error behavior are defined in the [AI module](./module/ai.go).
 
 **Project**
 
@@ -55,7 +55,7 @@ The snapshot format, version creation rules, history queries, restoration behavi
 
 The Task module coordinates long-running generation, processing, and export work. It owns task and step state transitions, dependency scheduling, progress reporting, retry, cancellation, idempotent result handling, and communication with workers through the configured messaging infrastructure.
 
-The task state machine, step dependencies, command and event contracts, retry behavior, and progress APIs are defined in the [Task module API design](./module_Task.md).
+The task state machine, step dependencies, command and event contracts, retry behavior, and progress APIs are defined in the [Task module](./module/task.go) and [Task service interfaces](./Interface/Task_service.go).
 
 **Taxonomy**
 
