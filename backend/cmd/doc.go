@@ -1,2 +1,2 @@
-// Package cmd 负责程序依赖注入暴露启动接口
+// Package cmd is responsible for dependency injection and exposing the startup interface.
 package cmd

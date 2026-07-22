@@ -1,2 +1,2 @@
-// Package internal 放一些不需要被外部调用的内部包
+// Package internal holds internal packages that should not be called externally.
 package internal

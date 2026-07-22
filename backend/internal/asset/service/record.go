@@ -12,7 +12,7 @@ type AssetResourceService interface {
 
 	// Animation resources.
 	CreateAnimationResource(ctx context.Context, resource *domain.AssetResource) (uint, error)
-	EditAnimationResource(ctx  context.Context,id uint, resource []domain.AssetResource) error
+	EditAnimationResource(ctx context.Context, id uint, resource []domain.AssetResource) error
 	GetAnimations(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error)
 
 	// Frame resources (associated with an animation).

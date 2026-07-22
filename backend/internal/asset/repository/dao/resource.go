@@ -4,7 +4,6 @@ import (
 	"context"
 )
 
-
 type AssetResourceDao interface {
 	CreateAssetResource(ctx context.Context, resource *AssetResource) (uint, error)
 }
@@ -17,5 +16,5 @@ type AssetResource struct {
 	AssetVersion uint
 	Type         string
 	Url          *string
-	Status	   uint
+	Status       uint
 }

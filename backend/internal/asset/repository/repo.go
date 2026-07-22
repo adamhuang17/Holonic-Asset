@@ -1,85 +1,32 @@
 package repository
 
-
 import (
 	"context"
 
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
-	"github.com/1024XEngineer/Holonic-Asset/internal/asset/repository/dao"
 )
 
 type AssetRepository interface {
-	GetAssetsByProjectID(ctx context.Context, projectID uint) ([]domain.Asset,error)
-	GetAssetDetail(ctx context.Context, id uint)(*domain.Asset,error)
-	UpdateTags(ctx context.Context,id uint, tags []string)([]string,error)
-	// 创建一个Character Asset，创建一个空protoType Resource
+	GetAssetsByProjectID(ctx context.Context, projectID uint) ([]domain.Asset, error)
+	GetAssetDetail(ctx context.Context, id uint) (*domain.Asset, error)
+	UpdateTags(ctx context.Context, id uint, tags []string) ([]string, error)
+	// CreateCharacterAsset creates a character asset and an empty protoType resource.
 	CreateCharacterAsset(ctx context.Context, asset *domain.Asset) (uint, error)
-	// 创建绑定到某个protoType的image资源
+	// CreateImageResources creates image resources bound to a specific protoType.
 	CreateImageResources(ctx context.Context, resource []domain.AssetResource) ([]domain.AssetResource, error)
 	CreateAnimationResource(ctx context.Context, resource *domain.AssetResource) (uint, error)
 
 	UpdateFrameResources(ctx context.Context, resource []domain.AssetResource) error
-	DeleteFrameResourcesByAnimationID(ctx context.Context,id uint)error
+	DeleteFrameResourcesByAnimationID(ctx context.Context, id uint) error
 	UpdateProtoTypeResources(ctx context.Context, resource []domain.AssetResource) error
 
 	GetAnimations(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error)
 	GetProtoTypeResources(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error)
 
-	// 创建一个AssetVersion并更新Asset的Version，复制Asset下的所有Resource到新版本下
+	// CreateRecord creates an AssetVersion, updates the Asset's version, and copies all resources under the asset to the new version.
 	CreateRecord(ctx context.Context, version *domain.AssetVersion) (*domain.AssetVersion, error)
-	// 删除 AssetVersion，回滚Asset的Version到上一个版本,删除所有该版本的Resource
+	// RollBackRecord deletes the AssetVersion, rolls back the Asset's version to the previous one, and deletes all resources of that version.
 	RollBackRecord(ctx context.Context, assetID uint, version uint) (uint, error)
-	// 全量复制Version、Asset及其所有Resource到新Asset下
+	// Copy performs a full copy of the version, asset, and all its resources to a new asset.
 	Copy(ctx context.Context, assetID uint) (uint, error)
-}
-
-func convertAssetToDao(asset *domain.Asset) *dao.Asset {
-	return &dao.Asset{
-		ID:          asset.ID,
-		Name:        asset.Name,
-		ProjectID:   asset.ProjectID,
-		Type:        string(asset.Type),
-		Description: asset.Description,
-		Tags:        asset.Tags,
-		Attributes:  asset.Attributes,
-		Version:     asset.Version,
-	}
-}
-
-func convertAssetToDomain(asset *dao.Asset) *domain.Asset {
-	return &domain.Asset{
-		ID:          asset.ID,
-		Name:        asset.Name,
-		ProjectID:   asset.ProjectID,
-		Type:        domain.AssetType(asset.Type),
-		Description: asset.Description,
-		Tags:        asset.Tags,
-		Attributes:  asset.Attributes,
-		Version:     asset.Version,
-	}
-}
-
-func convertResourceToDao(resource *domain.AssetResource) *dao.AssetResource {
-	return &dao.AssetResource{
-		ID:           resource.ID,
-		Name:         resource.Name,
-		ParentID:     resource.ParentID,
-		AssetID:      resource.AssetID,
-		AssetVersion: resource.AssetVersion,
-		Type:         string(resource.Type),
-		Url:          resource.Url,
-		Status: 	  uint(resource.Status),
-	}
-}
-
-func convertResourceToDomain(resource *dao.AssetResource) *domain.AssetResource {
-	return &domain.AssetResource{
-		ID:           resource.ID,
-		Name:         resource.Name,
-		ParentID:     resource.ParentID,
-		AssetID:      resource.AssetID,
-		AssetVersion: resource.AssetVersion,
-		Type:         domain.AssetResourceType(resource.Type),
-		Url:          resource.Url,
-	}
 }

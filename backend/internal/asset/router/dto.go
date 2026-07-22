@@ -3,12 +3,13 @@ package router
 import (
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
 )
+
 type GetAssetsRequest struct {
 	ProjectID uint
 }
 
 type GetAssetsResponse struct {
-	AssetID          uint
+	AssetID     uint
 	Name        string
 	ProjectID   uint
 	Type        domain.AssetType
@@ -18,7 +19,6 @@ type GetAssetsResponse struct {
 }
 
 type AssetDetailResponse struct {
-
 }
 
 type CreateCharacterAssetRequest struct {

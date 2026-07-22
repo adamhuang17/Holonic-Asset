@@ -1,8 +1,6 @@
 package router
 
 import (
-	"context"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/1024XEngineer/Holonic-Asset/pkg/echox"
@@ -17,12 +15,11 @@ type AssetRouter interface {
 	CreateTileSetAsset(ctx echo.Context, asset CreateTileSetAssetRequest) (CreateTileSetAssetResponse, error)
 	CopyAsset(ctx echo.Context, asset CopyAssetRequest) (CopyAssetResponse, error)
 
-	Tags(ctx echo.Context, assetID uint, tags []string)error
+	Tags(ctx echo.Context, assetID uint, tags []string) error
 }
 
-
-// registerRoutes 注册所有 HTTP 路由。
+// RegisterRoutes registers all HTTP routes.
 func RegisterRoutes(e *echo.Group, r AssetRouter) {
-	asset:=e.Group("/asset")
+	asset := e.Group("/asset")
 	asset.GET("/health", echox.WrapReq(r.GetAssets))
 }

@@ -1,7 +1,7 @@
 package dao
 
 type AssetVersion struct {
-	ID   uint
+	ID      uint
 	AssetID uint
 	Version uint
 }

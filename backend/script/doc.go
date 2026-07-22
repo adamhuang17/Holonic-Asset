@@ -1,2 +1,2 @@
-// Package script 放一些脚本文件,需要新建文件夹做分割
+// Package script holds script files; new folders should be created for separation.
 package script

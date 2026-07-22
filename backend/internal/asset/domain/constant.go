@@ -4,44 +4,39 @@ type AssetType string
 type AssetResourceType string
 type Status uint
 
-
 const (
+	AssetTypeCharacter AssetType = "character"
 
-AssetTypeCharacter AssetType = "character"
+	AssetTypeTileSet AssetType = "tileSet"
 
-AssetTypeTileSet AssetType = "tileSet"
+	AssetTypeAudio AssetType = "audio"
 
-AssetTypeAudio AssetType = "audio"
+	AssetTypeUI AssetType = "ui"
 
-AssetTypeUI AssetType = "ui"
+	AssetTypeObject AssetType = "object"
 
-AssetTypeObject AssetType = "object"
-
-AssetTypeScenery AssetType = "scenery"
-
+	AssetTypeScenery AssetType = "scenery"
 )
 
 const (
+	AssetResourceTypeProtoType AssetResourceType = "protoType"
 
-AssetResourceTypeProtoType AssetResourceType = "protoType"
+	// Image is bound to a protoType.
+	AssetResourceTypeImage AssetResourceType = "image"
 
-// image绑定在protoType上
-AssetResourceTypeImage     AssetResourceType = "image"
+	AssetResourceTypeAnimation AssetResourceType = "animation"
 
-AssetResourceTypeAnimation AssetResourceType = "animation"
+	// Frame is bound to an animation.
+	AssetResourceTypeFrame AssetResourceType = "frame"
 
-// frame绑定在animation上
-AssetResourceTypeFrame AssetResourceType = "frame"
+	AssetResourceTypeItem AssetResourceType = "item"
 
-AssetResourceTypeItem AssetResourceType = "item"
+	// Tile is bound to an item.
+	AssetResourceTypeTile AssetResourceType = "tile"
 
-// tile绑定在item上
-AssetResourceTypeTile AssetResourceType = "tile"
+	AssetResourceTypeUI AssetResourceType = "ui"
 
-AssetResourceTypeUI AssetResourceType = "ui"
-
-AssetResourceTypeScenery AssetResourceType = "scenery"
-
+	AssetResourceTypeScenery AssetResourceType = "scenery"
 )
 
 const (

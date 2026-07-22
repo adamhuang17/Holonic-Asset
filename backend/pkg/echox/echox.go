@@ -9,7 +9,6 @@ import (
 
 const UserClaimsKey = "user_claims"
 
-
 type HandlerFunc[Resp any] func(echo.Context) (Resp, error)
 
 type ReqHandlerFunc[Req any, Resp any] func(
