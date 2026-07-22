@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
+	"github.com/1024XEngineer/Holonic-Asset/internal/asset/repository/dao"
 )
 
 type AssetRepository interface {
@@ -29,4 +30,16 @@ type AssetRepository interface {
 	RollBackRecord(ctx context.Context, assetID uint, version uint) (uint, error)
 	// Copy performs a full copy of the version, asset, and all its resources to a new asset.
 	Copy(ctx context.Context, assetID uint) (uint, error)
+}
+
+type AssetRepositoryImpl struct {
+	AssetDao    dao.AssetDao
+	ResourceDao dao.AssetResourceDao
+	VersionDao  dao.AssetVersionDao
+}
+
+func (r *AssetRepositoryImpl) GetAssetsByProjectID(ctx context.Context, projectID uint) ([]domain.Asset, error) {
+	_, err := r.AssetDao.GetAssetsByProjectID(ctx, projectID)
+
+	return nil, err
 }

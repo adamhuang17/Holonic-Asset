@@ -3,6 +3,8 @@ package dao
 import (
 	"context"
 	"encoding/json"
+
+	"gorm.io/gorm"
 )
 
 type Asset struct {
@@ -18,4 +20,13 @@ type Asset struct {
 
 type AssetDao interface {
 	CreateAsset(ctx context.Context, asset *Asset) (uint, error)
+	GetAssetsByProjectID(ctx context.Context, projectID uint) ([]Asset, error)
+}
+
+type AssetDaoImpl struct {
+	DB *gorm.DB
+}
+
+func (a *AssetDaoImpl) GetAssetsByProjectID(ctx context.Context, projectID uint) ([]Asset, error) {
+	return nil, nil
 }

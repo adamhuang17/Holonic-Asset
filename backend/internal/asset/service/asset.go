@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
+	"github.com/1024XEngineer/Holonic-Asset/internal/asset/repository"
 )
 
 // AssetService manages CRUD operations for assets.
@@ -18,4 +19,12 @@ type AssetService interface {
 	CreateTileSetAsset(ctx context.Context, asset *domain.Asset) (uint, error)
 	CreateUIAsset(ctx context.Context, asset *domain.Asset) (uint, error)
 	CreateSceneryAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+}
+
+type AssetServiceImpl struct {
+	AssetRepository repository.AssetRepository
+}
+
+func (a *AssetServiceImpl) GetAssets(ctx context.Context, projectID uint) ([]domain.Asset, error) {
+	return a.AssetRepository.GetAssetsByProjectID(ctx, projectID)
 }

@@ -1,12 +1,8 @@
-package router
+package dto
 
 import (
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
 )
-
-type GetAssetsRequest struct {
-	ProjectID uint
-}
 
 type GetAssetsResponse struct {
 	AssetID     uint
@@ -46,6 +42,7 @@ type CreateTileSetAssetResponse struct {
 }
 
 type RecordAssetRequest struct {
+	AssetID uint
 }
 
 type RecordAssetResponse struct {
@@ -57,4 +54,13 @@ type CopyAssetRequest struct {
 
 type CopyAssetResponse struct {
 	NewAssetID uint
+}
+
+type AddTagsRequest struct {
+	AssetID uint
+	Tags    []string
+}
+
+type AddTagsResponse struct {
+	Tags []string
 }
