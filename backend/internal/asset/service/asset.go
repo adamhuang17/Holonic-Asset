@@ -1,0 +1,21 @@
+package service
+
+import (
+	"context"
+	
+	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
+)
+
+// AssetService manages CRUD operations for assets.
+type AssetService interface {
+	GetAssets(ctx context.Context, projectID uint) ([]domain.Asset, error)
+	GetDetail(ctx context.Context, id uint) (domain.Asset, error)
+	UpdateTags(ctx context.Context, id uint, tags []string) ([]string, error)
+
+	// Creates a Character asset and initializes an empty prototype resource.
+	CreateCharacterAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+	CreateObjectAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+	CreateTileSetAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+	CreateUIAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+	CreateSceneryAsset(ctx context.Context, asset *domain.Asset) (uint, error)
+}
