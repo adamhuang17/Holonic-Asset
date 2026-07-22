@@ -1,3 +1,3 @@
-module github.com/1024XEngineer/game-asset-pack
+module github.com/1024XEngineer/Holonic-Asset
 
-go 1.26.4
+go 1.26.5
