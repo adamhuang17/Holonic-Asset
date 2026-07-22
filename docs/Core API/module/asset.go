@@ -1,8 +1,10 @@
 package module
+
 import (
 	"context"
 
 	interfaces "../Interface"
+	data "../data structure"
 )
 
 // AssetService manages CRUD operations for assets.
@@ -22,6 +24,9 @@ type AssetModule interface {
 
 // AssetResourceService manages resources under an asset.
 type AssetResourceModule interface {
+	// GetAssetResource returns an AssetResource by its identity.
+	GetAssetResource(ctx context.Context, assetResourceID uint) (*data.AssetResource, error)
+
 	GetProtoTypeResources(ctx context.Context, assetID uint, version uint) ([]AssetResource, error)
 
 	// Animation resources.

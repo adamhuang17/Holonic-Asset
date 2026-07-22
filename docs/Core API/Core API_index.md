@@ -36,7 +36,7 @@ The authentication flow, session contract, authorization requirements, and expec
 
 The Media module manages metadata and storage references for images, audio, and other binary resources. It coordinates upload sessions and validates completed uploads while keeping binary payloads outside the Core API and storing stable object-storage references instead of provider-specific public URLs.
 
-The upload lifecycle, media metadata, storage-reference format, validation rules, and association APIs are defined in the [Media module API design](./module_Media.md).
+The upload lifecycle, media metadata, storage-reference format, validation rules, and association APIs are defined in the [Media module API design](./module/media.go).
 
 **Asset**
 
@@ -44,7 +44,7 @@ The Asset module owns both the current editable state and the immutable version 
 
 Each Asset has exactly one editable state and zero or more immutable Records. A Record captures the Asset snapshot and referenced resources at a specific version without becoming another editable copy of the Asset.
 
-The Asset CRUD operations, version creation rules, snapshot format, restoration behavior, type-specific attributes, parent-child rules, resource dependencies, and serialization contract are defined in the Asset module API design (./module_Asset.md).
+The Asset CRUD operations, version creation rules, snapshot format, restoration behavior, type-specific attributes, parent-child rules, resource dependencies, and serialization contract are defined in the [Asset module](./module/asset.go) and [Asset data structure](<./data structure/asset.go>).
 
 
 **Task**
@@ -57,7 +57,7 @@ The task state machine, step dependencies, command and event contracts, retry be
 
 The Taxonomy module manages tags, classifications, and their associations with Assets and Projects. It provides consistent metadata for discovery and filtering while keeping taxonomy management separate from Asset content and editor-specific state.
 
-The tag lifecycle, association rules, filtering behavior, normalization requirements, and query contracts are defined in the [Taxonomy module API design](./module_Taxonomy.md).
+The tag lifecycle, association rules, filtering behavior, normalization requirements, and query contracts are defined in the [Taxonomy module](./module/taxonomy.go).
 
 **Key features' implementation**
 
