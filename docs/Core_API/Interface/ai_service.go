@@ -96,6 +96,7 @@ type UIService interface {
 type LLMClient interface {
 	Chat(ctx context.Context, request *data.LLMRequest) (*data.LLMResponse, error)
 	GenerateImage(ctx context.Context, request *data.ImageGenerationRequest) (*data.GenerationResult, error)
+	EditImage(ctx context.Context, request *data.ImageEditRequest) (*data.GenerationResult, error)
 	GetGenerationResult(ctx context.Context, generationID string) (*data.GenerationResult, error)
 	CancelGeneration(ctx context.Context, generationID string) error
 }
