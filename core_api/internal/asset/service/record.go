@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/1024XEngineer/Holonic-Asset/internal/asset/domain"
+	"github.com/1024XEngineer/Holonic-Asset/internal/asset/repository"
 )
 
 // AssetResourceService manages resources under an asset.
 type AssetResourceService interface {
-	GetProtoTypeResources(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error)
+	GetProtoTypeResource(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error)
 
 	// Animation resources.
 	CreateAnimationResource(ctx context.Context, resource *domain.AssetResource) (uint, error)
@@ -29,4 +30,23 @@ type AssetResourceService interface {
 	// Image resources.
 	CreateImageResources(ctx context.Context, resource []domain.AssetResource) ([]domain.AssetResource, error)
 	EditImageResources(ctx context.Context, resource []domain.AssetResource) ([]domain.AssetResource, error)
+}
+
+type AssetResourceServiceImpl struct {
+	AssetRepository repository.AssetRepository
+}
+
+func (s *AssetResourceServiceImpl) GetProtoTypeResource(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error) {
+	_, err := s.AssetRepository.GetProtoTypeResource(ctx, assetID, version)
+	return []domain.AssetResource{}, err
+}
+
+func (s *AssetResourceServiceImpl) GetAnimations(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error) {
+	_, err := s.AssetRepository.GetAnimations(ctx, assetID, version)
+	return []domain.AssetResource{}, err
+}
+
+func (s *AssetResourceServiceImpl) GetItemResources(ctx context.Context, assetID uint, version uint) ([]domain.AssetResource, error) {
+	_, err := s.AssetRepository.GetItemResources(ctx, assetID, version)
+	return []domain.AssetResource{}, err
 }

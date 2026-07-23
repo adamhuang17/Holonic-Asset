@@ -10,11 +10,15 @@ import (
 type AssetRouter interface {
 	GetAssets(x *echox.Context) ([]dto.GetAssetsResponse, error)
 	Detail(x *echox.Context) (dto.AssetDetailResponse, error)
+	GetProtoTypeResource(x *echox.Context) (dto.GetAssetResourcesResponse, error)
+	GetAnimations(x *echox.Context) (dto.GetAssetResourcesResponse, error)
+	GetItemResources(x *echox.Context) (dto.GetAssetResourcesResponse, error)
 	Record(x *echox.Context, req dto.RecordAssetRequest) ([]dto.RecordAssetResponse, error)
 	CreateCharacterAsset(ctx *echox.Context, req dto.CreateCharacterAssetRequest) (dto.CreateCharacterAssetResponse, error)
 	CreateObjectAsset(ctx *echox.Context, req dto.CreateObjectAssetRequest) (dto.CreateObjectAssetResponse, error)
 	CreateTileSetAsset(ctx *echox.Context, req dto.CreateTileSetAssetRequest) (dto.CreateTileSetAssetResponse, error)
 	CopyAsset(ctx *echox.Context, req dto.CopyAssetRequest) (dto.CopyAssetResponse, error)
+	RollBackAsset(ctx *echox.Context, req dto.RollBackAssetRequest) (dto.RollBackAssetResponse, error)
 
 	Tags(ctx *echox.Context, req dto.AddTagsRequest) (dto.AddTagsResponse, error)
 }
@@ -29,6 +33,12 @@ func RegisterRoutes(e *echo.Group, r AssetRouter) {
 
 	asset.GET("/:asset_id", echox.Wrap(r.Detail))
 
+	asset.GET("/:asset_id/prototype", echox.Wrap(r.GetProtoTypeResource))
+
+	asset.GET("/:asset_id/animations", echox.Wrap(r.GetAnimations))
+
+	asset.GET("/:asset_id/items", echox.Wrap(r.GetItemResources))
+
 	asset.POST("/save", echox.WrapReq(r.Record))
 
 	asset.POST("/characters", echox.WrapReq(r.CreateCharacterAsset))
@@ -38,6 +48,8 @@ func RegisterRoutes(e *echo.Group, r AssetRouter) {
 	asset.POST("/tilesets", echox.WrapReq(r.CreateTileSetAsset))
 
 	asset.POST("/copy", echox.WrapReq(r.CopyAsset))
+
+	asset.POST("/rollback", echox.WrapReq(r.RollBackAsset))
 
 	asset.POST("/tags", echox.WrapReq(r.Tags))
 }

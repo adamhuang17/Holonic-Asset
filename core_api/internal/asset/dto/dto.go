@@ -17,6 +17,15 @@ type GetAssetsResponse struct {
 type AssetDetailResponse struct {
 }
 
+type GetAssetResourcesRequest struct {
+	AssetID uint
+	Version uint
+}
+
+type GetAssetResourcesResponse struct {
+	Resources []domain.AssetResource
+}
+
 type CreateCharacterAssetRequest struct {
 	Asset *domain.Asset
 }
@@ -63,4 +72,13 @@ type AddTagsRequest struct {
 
 type AddTagsResponse struct {
 	Tags []string
+}
+
+type RollBackAssetRequest struct {
+	AssetID uint
+	Version uint
+}
+
+type RollBackAssetResponse struct {
+	Asset *domain.Asset
 }
