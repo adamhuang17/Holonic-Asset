@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	aiprovider "github.com/1024XEngineer/Holonic-Asset/internal/ai/provider"
 	"github.com/1024XEngineer/Holonic-Asset/internal/generate/domain"
@@ -10,18 +11,57 @@ import (
 )
 
 // ImageTool applies one kind-specific image processing step.
+//
+// specification carries the kind-specific domain Specification assembled for the
+// request (e.g. domain.TileSetSpecification, domain.AnimationSpecification), or
+// nil when the request has no specification. The tool list is already keyed by
+// generation kind, so a tool may safely type-assert to the specification it
+// expects for its own kind.
 type ImageTool interface {
-	Process(ctx context.Context, imageURLs []string) ([]string, error)
+	Process(ctx context.Context, imageURLs []string, specification any) ([]string, error)
 }
 
 type generationStrategy interface {
-	prepareGenerate(request *dto.GenerateImageRequest, model string) (*aiprovider.ImageGenerationRequest, error)
-	prepareEdit(request *dto.EditImageRequest, model string) (*aiprovider.ImageEditRequest, error)
-	process(ctx context.Context, result *aiprovider.GenerationResult) (*dto.ImageResult, error)
+	executeGenerate(
+		ctx context.Context,
+		provider ImageProvider,
+		requestID string,
+		model string,
+		input generationInput,
+	) (*aiprovider.GenerationResult, error)
+	executeEdit(
+		ctx context.Context,
+		provider ImageProvider,
+		requestID string,
+		model string,
+		input editInput,
+	) (*aiprovider.GenerationResult, error)
+	processGenerate(
+		ctx context.Context,
+		input generationInput,
+		result *aiprovider.GenerationResult,
+	) (*dto.ImageResult, error)
+	processEdit(
+		ctx context.Context,
+		input editInput,
+		result *aiprovider.GenerationResult,
+	) (*dto.ImageResult, error)
 }
 
 type baseGenerationStrategy struct {
 	tools []ImageTool
+}
+
+type generationInput struct {
+	promptParts   []string
+	references    []domain.ImageReference
+	size          domain.Size
+	specification any
+}
+
+type editInput struct {
+	promptParts []string
+	target      domain.ImageReference
 }
 
 var (
@@ -29,31 +69,109 @@ var (
 	errGenerationKindUnsupported = errors.New("unsupported generation kind")
 )
 
-func (s *baseGenerationStrategy) prepareGenerate(request *dto.GenerateImageRequest, model string) (*aiprovider.ImageGenerationRequest, error) {
+func assembleGenerationInput(generationContext domain.GenerationContext) generationInput {
+	return generationInput{
+		promptParts: []string{
+			generationContext.Project.Style,
+			generationContext.Asset.Description,
+			generationContext.Description,
+		},
+		references: append([]domain.ImageReference(nil), generationContext.References...),
+		size:       generationContext.Size,
+	}
+}
+
+func assembleTargetEdit(
+	plan domain.EditPlan,
+	target domain.ImageReference,
+	targetEdit domain.TargetEdit,
+) editInput {
+	return editInput{
+		promptParts: []string{
+			plan.StyleDescription,
+			plan.SharedDescription,
+			targetEdit.Description,
+		},
+		target: target,
+	}
+}
+
+func (s *baseGenerationStrategy) executeGenerate(
+	ctx context.Context,
+	provider ImageProvider,
+	requestID string,
+	model string,
+	input generationInput,
+) (*aiprovider.GenerationResult, error) {
+	return provider.GenerateImage(ctx, buildGenerationRequest(requestID, model, input))
+}
+
+func (s *baseGenerationStrategy) executeEdit(
+	ctx context.Context,
+	provider ImageProvider,
+	requestID string,
+	model string,
+	input editInput,
+) (*aiprovider.GenerationResult, error) {
+	return provider.EditImage(ctx, buildEditRequest(requestID, model, input))
+}
+
+func buildGenerationRequest(
+	requestID string,
+	model string,
+	input generationInput,
+) *aiprovider.ImageGenerationRequest {
 	return &aiprovider.ImageGenerationRequest{
-		RequestID: request.RequestID,
+		RequestID: requestID,
 		Model:     model,
 		ImageGenerationInput: aiprovider.ImageGenerationInput{
-			Prompt:        request.Prompt,
-			ReferenceURLs: request.ReferenceURLs,
+			Prompt:        buildPrompt(input.promptParts...),
+			ReferenceURLs: referenceURLs(input.references),
 			Size: aiprovider.Size{
-				Width:  request.Size.Width,
-				Height: request.Size.Height,
+				Width:  input.size.Width,
+				Height: input.size.Height,
 			},
 		},
-	}, nil
+	}
 }
 
-func (s *baseGenerationStrategy) prepareEdit(request *dto.EditImageRequest, model string) (*aiprovider.ImageEditRequest, error) {
+func buildEditRequest(
+	requestID string,
+	model string,
+	input editInput,
+) *aiprovider.ImageEditRequest {
 	return &aiprovider.ImageEditRequest{
-		RequestID:  request.RequestID,
+		RequestID:  requestID,
 		Model:      model,
-		Prompt:     request.Prompt,
-		TargetURLs: request.TargetURLs,
-	}, nil
+		Prompt:     buildPrompt(input.promptParts...),
+		TargetURLs: []string{input.target.URL},
+	}
 }
 
-func (s *baseGenerationStrategy) process(ctx context.Context, result *aiprovider.GenerationResult) (*dto.ImageResult, error) {
+func (s *baseGenerationStrategy) processGenerate(
+	ctx context.Context,
+	input generationInput,
+	result *aiprovider.GenerationResult,
+) (*dto.ImageResult, error) {
+	return s.runTools(ctx, result, input.specification)
+}
+
+func (s *baseGenerationStrategy) processEdit(
+	ctx context.Context,
+	input editInput,
+	result *aiprovider.GenerationResult,
+) (*dto.ImageResult, error) {
+	return s.runTools(ctx, result, nil)
+}
+
+// runTools threads the assembled specification through the post-processing
+// pipeline so that each tool can see the Specification that produced the images,
+// not just the resulting URLs.
+func (s *baseGenerationStrategy) runTools(
+	ctx context.Context,
+	result *aiprovider.GenerationResult,
+	specification any,
+) (*dto.ImageResult, error) {
 	if result == nil || len(result.OutputURLs) == 0 {
 		if result != nil && result.ErrorMessage != "" {
 			return nil, errors.New(result.ErrorMessage)
@@ -63,7 +181,7 @@ func (s *baseGenerationStrategy) process(ctx context.Context, result *aiprovider
 	outputURLs := result.OutputURLs
 	for _, tool := range s.tools {
 		var err error
-		outputURLs, err = tool.Process(ctx, outputURLs)
+		outputURLs, err = tool.Process(ctx, outputURLs, specification)
 		if err != nil {
 			return nil, err
 		}
@@ -88,6 +206,24 @@ func newStrategies(tools map[domain.GenerationKind][]ImageTool) map[domain.Gener
 
 func toolsFor(tools map[domain.GenerationKind][]ImageTool, kind domain.GenerationKind) []ImageTool {
 	return append([]ImageTool(nil), tools[kind]...)
+}
+
+func buildPrompt(descriptions ...string) string {
+	parts := make([]string, 0, len(descriptions))
+	for _, description := range descriptions {
+		if description != "" {
+			parts = append(parts, description)
+		}
+	}
+	return strings.Join(parts, "\n")
+}
+
+func referenceURLs(references []domain.ImageReference) []string {
+	urls := make([]string, 0, len(references))
+	for _, reference := range references {
+		urls = append(urls, reference.URL)
+	}
+	return urls
 }
 
 func (s *generateService) strategyFor(kind domain.GenerationKind) (generationStrategy, error) {
