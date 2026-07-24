@@ -11,6 +11,8 @@ import (
 	projectrepository "github.com/1024XEngineer/Holonic-Asset/internal/project/repository"
 	projectdao "github.com/1024XEngineer/Holonic-Asset/internal/project/repository/dao"
 	projectservice "github.com/1024XEngineer/Holonic-Asset/internal/project/service"
+	taxonomyhandler "github.com/1024XEngineer/Holonic-Asset/internal/taxonomy/handler"
+	taxonomyservice "github.com/1024XEngineer/Holonic-Asset/internal/taxonomy/service"
 )
 
 func main() {
@@ -25,6 +27,9 @@ func main() {
 	mediaService := mediaservice.NewMediaService()
 	mediaHandler := mediahandler.NewMediaHandler(mediaService)
 
-	e := internal.Register(nil, projectHandler, aiHandler, mediaHandler)
+	taxonomyService := taxonomyservice.NewAssetDiscoveryService()
+	taxonomyHandler := taxonomyhandler.NewTaxonomyHandler(taxonomyService)
+
+	e := internal.Register(nil, projectHandler, aiHandler, mediaHandler, taxonomyHandler)
 	e.Logger.Fatal(e.Start(":8080"))
 }
