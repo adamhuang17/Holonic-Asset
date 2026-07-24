@@ -16,7 +16,7 @@ import (
 func TestProjectPreviewUploadTargetRouteReturnsPlaceholderResponse(t *testing.T) {
 	mediaService := service.NewMediaService()
 	mediaHandler := handler.NewMediaHandler(mediaService)
-	e := internal.Register(nil, nil, nil, mediaHandler)
+	e := internal.Register(nil, nil, nil, mediaHandler, nil)
 
 	req := httptest.NewRequest(
 		http.MethodPost,
@@ -39,7 +39,7 @@ func TestProjectPreviewUploadTargetRouteReturnsPlaceholderResponse(t *testing.T)
 func TestMediaRoutesDoNotExposeUnsupportedOperations(t *testing.T) {
 	mediaService := service.NewMediaService()
 	mediaHandler := handler.NewMediaHandler(mediaService)
-	e := internal.Register(nil, nil, nil, mediaHandler)
+	e := internal.Register(nil, nil, nil, mediaHandler, nil)
 
 	routes := []string{
 		"/api/v1/media/upload-target",
